@@ -16,6 +16,7 @@ class HomeCategoriesTab extends StatefulWidget {
 class _HomeCategoriesTabState extends State<HomeCategoriesTab>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
+  List<Animation<Offset>> _animations = [];
 
   @override
   void initState() {
@@ -25,6 +26,27 @@ class _HomeCategoriesTabState extends State<HomeCategoriesTab>
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
+
+    final rows = (dummyCategories.length / 2).ceil();
+    final intervalDuration = 1 / rows;
+
+    _animations = List.generate(
+      dummyCategories.length,
+      (index) => Tween<Offset>(
+        begin: const Offset(0, 1),
+        end: Offset.zero,
+      ).animate(
+        CurvedAnimation(
+          parent: _animationController,
+          curve: Interval(
+            (index ~/ 2) * intervalDuration,
+            1.0,
+            curve: Curves.easeOut,
+          ),
+        ),
+      ),
+    );
+
     _animationController.forward();
   }
 
@@ -41,34 +63,25 @@ class _HomeCategoriesTabState extends State<HomeCategoriesTab>
 
   @override
   Widget build(BuildContext context) {
-    return SlideTransition(
-      position: Tween(
-        begin: const Offset(0, 0.7),
-        end: const Offset(0, 0),
-      ).animate(
-        CurvedAnimation(
-          parent: _animationController,
-          curve: Curves.easeOutCubic,
-        ),
+    final categories = dummyCategories.values.toList();
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 3 / 2,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
       ),
-      child: GridView(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 3 / 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+      itemCount: categories.length,
+      itemBuilder: (context, index) => SlideTransition(
+        position: _animations[index],
+        child: CategoryGridItem(
+          category: categories[index],
+          onSelectCategory: () {
+            _selectCategory(context, categories[index]);
+          },
         ),
-        children: [
-          // availableCategories.map((category) => CategoryGridItem(category: category)).toList()
-          for (final category in dummyCategories.values)
-            CategoryGridItem(
-              category: category,
-              onSelectCategory: () {
-                _selectCategory(context, category);
-              },
-            )
-        ],
       ),
     );
   }
